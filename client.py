@@ -3,8 +3,6 @@ import random
 import pygame
 import argparse
 
-from sys import argv
-
 from Config import *
 from Network import Network
 from Player import Player
@@ -12,39 +10,90 @@ from Utils import *
 
 pygame.init()
 
-def draw_background(screen):
-    # FONDO
-    pygame.draw.rect(screen, (0, 0, 0), (0, 0, WIDTH, HEIGHT))
+class Client:
+    def __init__(self,username,host,port):
+        self.width = 500
+        self.height = 500
+
+        self.player = Player(
+            x=self.width/2, 
+            y=self.height/2, 
+            width=50, 
+            height=50, 
+            color =(random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)), 
+            username = username
+        )
+
+        # PYGAGME INITIALIZATION
+        self.clock = pygame.time.Clock()
+        self.screen = pygame.display.set_mode(SIZE)
+        # Cada jugador tiene 20 puntos, el jugador se los puede comer y gana salud, debe comérselos antes de que el otro jugador lo haga y luego debe perseguirlo
+        self.balls = [ [random.randint(0,WIDTH-20),random.randint(60,HEIGHT-20)] for i in range(0,20) ]
 
 
-def handle_events(player):
-    # DISPARA PROYECTIL
-    for event in pygame.event.get():
-        # Quit Game
-        if event.type == pygame.QUIT:
-            pygame.quit()
-            quit()
+        self.font = pygame.font.SysFont("Press_Start_2P", 20)
 
-        # Shot
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            player.add_ball(event.pos[0], event.pos[1])
+        # FETCHING INFO FROM SERVER
+        self.game_server = Network(host,port)
+        self.players = self.game_server.get_players()
 
 
-def draw_players(PLAYERS,SCREEN,user):
-    users = []
+    def draw_background(self,screen):
+        pygame.draw.rect(screen, (0, 0, 0), (0, 0, self.width, self.height))
 
-    for player in PLAYERS:
-        color = player.color if not player.state == "dead" else (255,255,255)
-        pygame.draw.rect(SCREEN, color, [player.x, player.y, player.width, player.height])
 
-        if check_colisions(user.x,user.y,user.width, user.height, player.x, player.y, player.width, player.height):
-            if not player.state=="dead":
-                user.damage(reason="player")
+    def handle_events(self):
+        for event in pygame.event.get():
+            # Quit Game
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                quit()
 
-        users.append(player.username)
 
-    print(f"[SHARING WITH]: {users}")
+    def draw_players(self):
+        users = []
 
+        for player in self.players:
+            color = player.color if not player.state == "dead" else (255,255,255)
+            pygame.draw.rect(self.screen, color, [player.x, player.y, player.width, player.height])
+
+            if check_colisions(self.player.x,self.player.y,self.player.width, self.player.height, player.x, player.y, player.width, player.height):
+                if not player.state=="dead":
+                    self.player.damage(reason="player")
+
+            users.append(player.username)
+
+
+    def main(self):
+        while True:
+            # BACKGROUND
+            self.draw_background(self.screen)
+            self.handle_events()
+
+            # BALLS DRAWING
+            for ball in self.balls:
+                if not (ball in self.player.excluded):
+                    pygame.draw.rect(self.screen,self.player.color,[ball[0],ball[1],20,20])
+            
+            # DRAW PLAYER
+            self.player.draw(self.screen)
+            self.player.draw_hp(self.font,self.screen)
+            self.player.update()
+            
+            # PLAYER MOVING
+            keys = pygame.key.get_pressed()
+            self.player.move(keys)
+            self.player.pickballs(self.balls)
+
+            # GET OTHER PLAYERS AND SEND INFO
+            self.players = self.game_server.send(self.player)
+            self.draw_players()
+
+            # DISPLAY UPDATE
+            pygame.display.update()
+            pygame.display.flip()
+
+            self.clock.tick(60)
 
 def cli():
     parser = argparse.ArgumentParser(
@@ -82,58 +131,6 @@ def cli():
     return parser.parse_args()
 
 
-def main():
-    # PYGAGME INITIALIZATION
-    CLOCK = pygame.time.Clock()
-    SCREEN = pygame.display.set_mode(SIZE)
-    # Cada jugador tiene 20 puntos, el jugador se los puede comer y gana salud, debe comérselos antes de que el otro jugador lo haga y luego debe perseguirlo
-    BALLS = [ [random.randint(0,WIDTH-20),random.randint(60,HEIGHT-20)] for i in range(0,20) ]
-    font = pygame.font.SysFont("Press_Start_2P", 20)
-
-
-    # READING ARGUMENTS
-    args = cli()
-
-    # FETCHING INFO FROM SERVER
-    game_server = Network(args.host,args.port)
-    PLAYERS = game_server.get_players()
-
-    # CREATING A PLAYER FOR THE USER
-    player = Player(WIDTH/2, HEIGHT/2, 50, 50, (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)), args.username)
-
-    while True:
-        # BACKGROUND
-        draw_background(SCREEN)
-        
-        # CLOSE EVENTS
-        handle_events(player)
-
-        # BALLS DRAWING
-        for ball in BALLS:
-            if not (ball in player.excluded):
-                pygame.draw.rect(SCREEN,player.color,[ball[0],ball[1],20,20])
-        
-        # DRAW PLAYER
-        player.draw(SCREEN)
-        player.draw_hp(font,SCREEN)
-        player.update()
-        
-        # PLAYER MOVING
-        keys = pygame.key.get_pressed()
-        player.move(keys)
-
-        player.pickballs(BALLS)
-
-        # GET OTHER PLAYERS AND SEND INFO
-        PLAYERS = game_server.send(player)
-        draw_players(PLAYERS,SCREEN,player)
-
-        # DISPLAY UPDATE
-        pygame.display.update()
-        pygame.display.flip()
-
-        CLOCK.tick(60)
-
-
 if __name__ == "__main__":
-    main()
+    args = cli()
+    client = Client(args.username,args.host,args.port)

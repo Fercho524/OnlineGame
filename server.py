@@ -9,7 +9,7 @@ from sys import argv
 from Player import *
 
 class Server:
-    def __init__(self,port,host):
+    def __init__(self,host,port):
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
         try:
@@ -41,7 +41,7 @@ class Server:
                 
                 if not recived_player:
                     print("Disconnected")
-                    print(currentPlayer)
+                    print(self.currentPlayer)
                     break
                 else:
                     reply = []
@@ -97,3 +97,12 @@ class Server:
             # ADD A NEW PLAYER
             self.currentPlayer += 1
             self.players.append(init_player(self.currentPlayer))
+
+
+
+if __name__ == "__main__":
+    host = socket.gethostbyname(socket.gethostname())
+    port = int(argv[1])
+    
+    serv = Server(host,port)
+    serv.run()

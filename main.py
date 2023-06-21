@@ -1,31 +1,50 @@
+import random
 import socket
-import multiprocessing
 
-from _thread import *
-from sys import argv
+import pygame
+import argparse
 
-from Player import *
-from server import Server
+from Config import *
+from Network import Network
+from Player import Player
+from Utils import *
+from client import *
 
-hosts = []
+# ESCANEO DE SERVIDORES
+myip = socket.gethostbyname(socket.gethostname())
 
-with open("avaiables.txt") as addresses:
-    hosts = addresses.readlines()
+with open("hosts.txt") as avaiables:
+    hosts = avaiables.readlines()
+    for i in range(len(hosts)):
+        hosts[i] = hosts[i].replace("\n","")
 
-    for i,host in enumerate(hosts):
-        ip,port = host.split(":")
-        hosts[i] = [ip,int(port)]
+    print(hosts)
 
-print(hosts)
+print("FINDING IN SERVERS WITH IP:")
+for ip in hosts: print(ip)
 
-server = random.sample(hosts,1)[0]
+allowed_ports = [3000,4000,5555]
 
-print(server)
+print("SCANNING IN ALLOWED PORTS:")
+print(allowed_ports)
 
-host = server[0]
-port = server[1]
+servers = []
 
+# ESCANEO DE PUERTOS EN LOS HOSTS
+for host in hosts:
+    for port in allowed_ports:
+        sock = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+        result = sock.connect_ex((host,port))
+        
+        if result == 0:
+            print(f"Found server in {host};{port}")
+            servers.append([host,port])
 
-serv = Server(port,host)
+        sock.close()
 
-serv.run()
+# CONECTANDOSE A UN SERVIDOR ALEATORIO
+args = cli()
+elejido = random.sample(servers,1)[0]
+
+cliente = Client(args.username,elejido[0],int(elejido[1]))
+cliente.main()

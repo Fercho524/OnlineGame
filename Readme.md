@@ -4,16 +4,26 @@
 pip install pygame termcolor numpy argparse pickle
 ```
 
-Para ejecutar el servidor en nuestra máquina en el puerto 5555 ejecutamos, el host que tomará será el de nuestra computadora.
+## Ejecutar un servido
+
+Para ejecutar el servidor en nuestra máquina en el puerto 5555 ejecutamos, el host que tomará será el de nuestra computadora. 
 
 ```sh
 python server.py 5555
 ```
 
-Para ejecutar el cliente lo hacemos de esta forma, podemos especificar el host, pero si no lo hacemos el programa asume que el servidor corre en la misma computadora. 
+**Nota**
+
+Los puertos admitidos son los siguientes
+
+- 3000
+- 4000
+- 5555
+
+## Ejecución del cliente
+
+Esta vez el cliente será el que elija de entre todos los servidores que pueda escanear en esos puertos y lo añadirá a la lista de conexiones si ha encontrado algo. Lo único que hay que hacer para correr un cliente es ejecutar el siguiente comando con nuestro nombre de usuario y el balanceador de carga elejirá un servidor.
 
 ```sh
-python client.py --host {IP DEL SERVIDOR} --port 5555 --username fercho
+python main.py --username fercho524
 ```
-
-El puerto por defecto es el 5555 pero se puede editar en el servidor, hay que especificar un username.
