@@ -1,0 +1,18 @@
+
+# Ball Constants
+BALL_SPEED = 10
+BALL_WIDTH = 10
+
+# Player Constants
+DEFAULT_HP = 1000
+PLAYER_SPEED = 10
+
+
+# Animations
+DAMAGE_ANIMATION_DURATION = 80
+
+# Colors
+DAMAGE_COLOR = (255, 80, 0)
+DEATH_COLOR = (250, 250, 250)
+
+SIZE = WIDTH, HEIGHT = (500, 500)
